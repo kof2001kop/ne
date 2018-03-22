@@ -29,8 +29,20 @@ public class MainActivity extends Activity  implements Runnable
 {
     public void run()  
     {  
-    	ToAnalysis.parse("是");
-    	isLoaded = true;
+    	if (!isAppleDown)
+    	{
+    		isAppleDown = true;
+    		mApple = getApple();
+    	}
+    	
+    	if (!preLoadAna)
+    	{
+    		preLoadAna = true;
+    		ToAnalysis.parse("是");
+    		isLoaded = true;
+    	}
+    	
+
     }  
 	
 	public Map<String, String> getDouban()
@@ -62,7 +74,7 @@ public class MainActivity extends Activity  implements Runnable
 		return m2;
 	}
 
-	public Map<String, String> getApple()
+	public static Map<String, String> getApple()
 	{
 		getWeb apple = new getWeb("https://tw.entertainment.appledaily.com/realtime");
 		apple.start();
@@ -187,9 +199,14 @@ public class MainActivity extends Activity  implements Runnable
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
+		viewMap = ViewToMap();
+		reCreate();
+	}
+	
+	private void reCreate()
+	{
 		mDouban = getDouban();
 		Iterator<Map.Entry<String, String>> entries_Douban = mDouban.entrySet().iterator();
-		viewMap = ViewToMap();
 
 		int ic = 0;
 		while (entries_Douban.hasNext()) // 27
@@ -203,10 +220,13 @@ public class MainActivity extends Activity  implements Runnable
 		}
 		curIC = ic;
 		
-        Toast.makeText(getApplicationContext(), "载入中…", Toast.LENGTH_LONG).show(); 
-		mTimeHandler.sendEmptyMessageDelayed(0, 500);
+		
+        Toast.makeText(getApplicationContext(), "载入中…", Toast.LENGTH_LONG).show();
+        new Thread(this, "新线程2").start(); 
+		mTimeHandler.sendEmptyMessageDelayed(0, 9000);
 	}
-
+	
+	
 	public void NextPage(View view)
 	{
 		if (m_ID_AppleOrDouban.get(view.getId()) == "Douban")
@@ -240,30 +260,48 @@ public class MainActivity extends Activity  implements Runnable
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings)
 		{
+			clean();
+			reCreate();
 			return true;
 		}
 
 		return super.onOptionsItemSelected(item);
 	}
 
-	private Map<String, String> mApple, mDouban;
+	private void clean()
+	{
+		mApple.clear();
+		mDouban.clear();
+		m_ID_INT.clear();
+		m_ID_AppleOrDouban.clear();
+		curIC = 0;
+		isAppleDown = false;
+	}
+	
+	private static Map<String, String> mApple, mDouban;
 	private Map<Integer, String> m_ID_INT = new HashMap<Integer, String>();
 	private Map<Integer, String> m_ID_AppleOrDouban = new HashMap<Integer, String>();
 	private static boolean isLoaded = false;
 	private static int curIC = 0;
 	private static Vector<Integer> viewMap;
+	private static boolean preLoadAna = false;
+	private static boolean isAppleDown = false;
 	
 	private Handler mTimeHandler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             if (msg.what == 0)
             {
-        		mApple = getApple();
+        		//mApple = getApple();
+            	
+            	if (mApple.isEmpty())
+            	{
+    		        Toast.makeText(getApplicationContext(), "苹果日报连接失败！", Toast.LENGTH_LONG).show();  	                
+            		return;
+            	}
+            	
         		Iterator<Map.Entry<String, String>> entries_Apple = mApple.entrySet().iterator();
 
         		// 繁体转简

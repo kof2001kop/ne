@@ -26,6 +26,7 @@ import com.example.getWeb.getWeb;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.app.DownloadManager;
 import android.app.DownloadManager.Request;
 import android.content.BroadcastReceiver;
@@ -54,8 +55,16 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class Douban_Activity extends Activity
+public class DoubanActivity extends Activity
 {	
+	public static native String StrToJson(String str);
+	
+	static
+	{
+		System.loadLibrary("crystax");
+        System.loadLibrary("show");
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -369,6 +378,7 @@ public class Douban_Activity extends Activity
 		KeyVec.clear();
 		downloadCount = 0;
 		jumpCount = 0;
+		Menu_key_Which = 0;
 	}
 	
 	
@@ -394,6 +404,12 @@ public class Douban_Activity extends Activity
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
+		if (title.equals("无法爬虫！"))
+		{
+			Toast.makeText(getApplicationContext(), "无法爬虫！", Toast.LENGTH_LONG).show();
+			return true;
+		}
+			
 		int id = item.getItemId();
 
 		if (id == R.id.confirm)
@@ -526,32 +542,68 @@ public class Douban_Activity extends Activity
 					vsK.add(x);
 				}
 			}
-			String[] vsKA = vsK.toArray(new String[vsK.size()]);
-		
-			 new AlertDialog.Builder(this).setTitle("重复率检查")
-			 .setIcon(android.R.drawable.ic_dialog_info)
-			 .setSingleChoiceItems(vsKA, 0, new DialogInterface.OnClickListener() 
-			 {
+			final String[] vsKA = vsK.toArray(new String[vsK.size()]);
+			
+			Builder checkDialog = new AlertDialog.Builder(this);
+			checkDialog.setTitle(title).setIcon(android.R.drawable.ic_dialog_info);
+			
+			if (vsKA.length != 0)
+			{
+				checkDialog.setSingleChoiceItems(vsKA, 0, new DialogInterface.OnClickListener() 
+				{
 				 public void onClick(DialogInterface dialog, int which)
 				 {
+					 Menu_key_Which = which;
 					 //dialog.dismiss();
 				 }
-			 })
-			 .setView(new EditText(this))
-			 .setPositiveButton("退出",new DialogInterface.OnClickListener()
+				});
+			}
+			
+			final EditText keyET = new EditText(this);
+			keyET.setId(500);
+	
+			checkDialog.setView(keyET)
+			 .setPositiveButton("确定",new DialogInterface.OnClickListener()
 			 {
 				 @Override
 				 public void onClick(DialogInterface dialog, int which)
-				 {
-					 //finish();
+				 {					
+					String finalKey = "";
+					
+					if (!keyET.getText().toString().isEmpty())
+						finalKey = keyET.getText().toString();
+					else if (vsKA.length == 0)
+					{
+				        Toast.makeText(DoubanActivity.this, "关键字不能为空！", Toast.LENGTH_LONG).show();  	                
+						return;
+					}
+					else
+						finalKey = vsKA[Menu_key_Which];
+					
+					showRepeat(finalKey);
 				 }
-			 }).show();
+			 })
+			 .setNegativeButton("取消", null).show();
+			
 			 return true;
 		}
 
 		return super.onOptionsItemSelected(item);
 	}
 	
+	private void showRepeat(String sr)
+	{
+		sr = sr.trim();
+		String urlK = "https://www.toutiao.com/search_content/?offset=0&format=json&keyword=" + sr + "&autoload=true&count=20&cur_tab=1&from=search_tab";
+		getWeb content = new getWeb(urlK);
+		content.start();
+		try { content.join(); } catch (InterruptedException e) { e.printStackTrace(); }
+		
+		String ss = content.getContent().body().text().toString();
+		String endStr = StrToJson(ss);
+
+		new AlertDialog.Builder(this).setMessage(endStr).show();
+	}
 
 	public static String url;
 	private String c = "";
@@ -563,5 +615,6 @@ public class Douban_Activity extends Activity
 	private static EditText et;
 	private static Vector<String> KeyVec = new Vector<String>();
 	private static int downloadCount = 0;
-	private static int jumpCount = 0;	
+	private static int jumpCount = 0;
+	private static int Menu_key_Which = 0;
 }

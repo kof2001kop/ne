@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
+import org.ansj.splitWord.analysis.ToAnalysis;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -16,12 +17,15 @@ import com.example.getWeb.getWeb;
 import com.spreada.utils.chinese.ZHConverter;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DownloadManager;
+import android.app.AlertDialog.Builder;
 import android.app.DownloadManager.Request;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
@@ -30,12 +34,15 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
-public class Apple_Activity extends Activity
+public class AppleActivity extends Activity
 {
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -260,6 +267,8 @@ public class Apple_Activity extends Activity
 		m_ID_URL.clear();
 		downloadCount = 0;
 		jumpCount = 0;
+		Menu_key_Which = 0;
+
 	}
 	
     public void onBackPressed() 
@@ -273,6 +282,93 @@ public class Apple_Activity extends Activity
 		clean();
 	}
 	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu)
+	{
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.apple, menu);
+		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item)
+	{
+		int id = item.getItemId();
+		if (id == R.id.check_repeat)
+		{
+			//获取关键字
+			String KeyStr = ToAnalysis.parse(title).toString();
+			String[] pieces = KeyStr.split(",");
+			Vector<String> vsK = new Vector<String>();
+			for (String x : pieces)
+			{
+				if (x.contains("/nr"))
+				{
+					x = x.replace("/nr", "");
+					vsK.add(x);
+				}
+			}
+			final String[] vsKA = vsK.toArray(new String[vsK.size()]);
+			
+			Builder checkDialog = new AlertDialog.Builder(this);
+			checkDialog.setTitle(title).setIcon(android.R.drawable.ic_dialog_info);
+			
+			if (vsKA.length != 0)
+			{
+				checkDialog.setSingleChoiceItems(vsKA, 0, new DialogInterface.OnClickListener() 
+				{
+				 public void onClick(DialogInterface dialog, int which)
+				 {
+					 Menu_key_Which = which;
+				 }
+				});
+			}
+			
+			final EditText keyET = new EditText(this);
+			keyET.setId(500);
+	
+			checkDialog.setView(keyET)
+			 .setPositiveButton("确定",new DialogInterface.OnClickListener()
+			 {
+				 @Override
+				 public void onClick(DialogInterface dialog, int which)
+				 {					
+					String finalKey = "";
+					
+					if (!keyET.getText().toString().isEmpty())
+						finalKey = keyET.getText().toString();
+					else if (vsKA.length == 0)
+					{
+				        Toast.makeText(AppleActivity.this, "关键字不能为空！", Toast.LENGTH_LONG).show();  	                
+						return;
+					}
+					else
+						finalKey = vsKA[Menu_key_Which];
+					
+					showRepeat(finalKey);
+				 }
+			 })
+			 .setNegativeButton("取消", null).show();
+			
+			return true;
+		}
+		
+		return super.onOptionsItemSelected(item);
+	}
+	
+	private void showRepeat(String sr)
+	{
+		sr = sr.trim();
+		String urlK = "https://www.toutiao.com/search_content/?offset=0&format=json&keyword=" + sr + "&autoload=true&count=20&cur_tab=1&from=search_tab";
+		getWeb content = new getWeb(urlK);
+		content.start();
+		try { content.join(); } catch (InterruptedException e) { e.printStackTrace(); }
+		
+		String ss = content.getContent().body().text().toString();
+		String endStr = DoubanActivity.StrToJson(ss);
+
+		new AlertDialog.Builder(this).setMessage(endStr).show();
+	}
 	
 	public static String url;
 	private String c;
@@ -281,4 +377,6 @@ public class Apple_Activity extends Activity
 	private static Map<Long, String> m_ID_URL = new HashMap<Long, String>();
 	private static int downloadCount = 0;
 	private static int jumpCount = 0;	
+	private static int Menu_key_Which = 0;
+
 }

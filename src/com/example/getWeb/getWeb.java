@@ -3,6 +3,7 @@ import java.io.IOException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+
 public class getWeb extends Thread
 {
 	public getWeb(String url)
@@ -19,7 +20,7 @@ public class getWeb extends Thread
 	{ 
 		try
 		{
-			Document doc = Jsoup.connect(url).get();
+			Document doc = Jsoup.connect(url).ignoreContentType(true).get();
 			content = doc;
 		} 
 		catch (IOException e)

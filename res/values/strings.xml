@@ -3,7 +3,7 @@
 
     <string name="app_name">NEWS</string>
     <string name="hello_world">Hello world!</string>
-    <string name="action_settings">设置</string> 
+    <string name="action_settings">刷新</string> 
     <string name="confirm">确认</string>
     <string name="check_repeat">重复率</string>        
     <string name="title_activity_new1">MainActivity</string>

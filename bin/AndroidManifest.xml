@@ -26,11 +26,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".Apple_Activity"
+            android:name=".AppleActivity"
             android:label="@string/page_next" >
         </activity>
         <activity
-            android:name=".Douban_Activity"
+            android:name=".DoubanActivity"
             android:label="@string/page_next" >
         </activity>
     </application>
